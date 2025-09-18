@@ -1,27 +1,42 @@
 import streamlit as st
+import re
 from collections import Counter
+import pandas as pd
 
-st.title("📝 Text Analyzer Tool")
+st.title("Text Analyzer Tool")
 
-# Text input
-user_text = st.text_area("Enter your text here:")
-interactive_button = st.button("Analyze")
+if "count" not in st.session_state:
+    st.session_state.count = 0
 
-if user_text and interactive_button:
-    # Basic stats
-    char_count = len(user_text)
-    word_count = len(user_text.split())
-    sentence_count = user_text.count('.') + user_text.count('!') + user_text.count('?')
+user_words = st.text_area("Enter your text here")
 
-    st.write(f"**Characters:** {char_count}")
-    st.write(f"**Words:** {word_count}")
-    st.write(f"**Sentences:** {sentence_count}")
+if st.button("Analyze"):
+    if not user_words.strip():
+        st.warning("Please enter some text before analyzing.")
+    else:
+        char_count = len(user_words)
+        word_count = len(user_words.split())
+        sentence_count = user_words.count('.') + user_words.count('!') + user_words.count('?')
 
-    # Most common words
-    words = user_text.lower().split()
-    word_freq = Counter(words).most_common(3)
+        words = re.findall(r"\b\w+\b", user_words.lower())
+        word_freq = Counter(words).most_common(5)
 
-    st.subheader("Top 3 Words")
-    for word, freq in word_freq:
-        st.write(f"{word} → {freq}")
-    
+        st.write(f"Character count: {char_count}")
+        st.write(f"Word count: {word_count}")
+        st.write(f"Sentence count: {sentence_count}")
+        st.write("### Top 5 words ->")
+        c1, c2 = st.columns(2)
+        for word, freq in word_freq:
+            with c1: st.write(word)
+            with c2: st.write(freq)
+        
+        df = pd.DataFrame(word_freq, columns=["Word", "Frequency"])
+
+        st.bar_chart(df.set_index("Word"))
+
+        if st.button("Reset"):
+            st.session_state.count = 0
+        else:
+            st.session_state.count += 1
+
+st.write("Number of analyses performed: ", st.session_state.count)
